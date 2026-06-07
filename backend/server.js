@@ -8,7 +8,9 @@ import "./config/passport.js";
 import authRoutes from "./routes/authRoutes.js";
 import favouritesRoutes from "./routes/favouritesRoutes.js";
 
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 connectDB();
 
 const app = express();
