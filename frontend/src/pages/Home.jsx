@@ -56,7 +56,7 @@ function Home() {
         >
           GitPulse
         </h1>
-        <p
+<p
           style={{
             color: "#adb5bd",
             fontSize: "1.1rem",
@@ -64,8 +64,8 @@ function Home() {
             margin: "0 auto 1.5rem auto",
           }}
         >
-          Explore GitHub users and repositories — from commits and issues to
-          contributors and activity graphs, all in one dashboard.
+          Search any GitHub username to explore their repositories, commits,
+          contributors and activity graphs — all in one place.
         </p>
         <div style={{ maxWidth: "500px", margin: "0 auto" }}>
           <input
