@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const githubHeaders = import.meta.env.VITE_GITHUB_TOKEN
+  ? { Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}` }
+  : {};
+
 function Repos() {
   const [repos, setRepos] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -21,7 +25,10 @@ function Repos() {
       try {
         const res = await axios.get(
           `https://api.github.com/users/${username}/repos`,
-          { params: { per_page: 100 } }
+          {
+            params: { per_page: 100 },
+            headers: githubHeaders,
+          }
         );
         setRepos(res.data);
         setFiltered(res.data);
@@ -58,7 +65,12 @@ function Repos() {
     navigate(`/repo?user=${ownerLogin}&repo=${repoName}`);
   }
 
-  if (loading) return <p className="text-center mt-5"><i>Loading...</i></p>;
+  if (loading) return (
+    <div className="text-center mt-5">
+      <div className="spinner-border text-primary" role="status"></div>
+      <p className="mt-2 text-muted">Loading repositories...</p>
+    </div>
+  );
   if (error) return <p className="text-center text-danger mt-5">{error}</p>;
 
   return (

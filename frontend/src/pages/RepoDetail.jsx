@@ -18,6 +18,10 @@ import { marked } from "marked";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+const githubHeaders = import.meta.env.VITE_GITHUB_TOKEN
+  ? { Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}` }
+  : {};
+
 function RepoDetail() {
   const [searchParams] = useSearchParams();
   const username = searchParams.get("user");
@@ -54,7 +58,8 @@ function RepoDetail() {
       setLoading(true);
       try {
         const repoRes = await axios.get(
-          `https://api.github.com/repos/${username}/${repoName}`
+          `https://api.github.com/repos/${username}/${repoName}`,
+          { headers: githubHeaders }
         );
         setRepoData(repoRes.data);
 
@@ -62,7 +67,12 @@ function RepoDetail() {
         try {
           const readmeRes = await axios.get(
             `https://api.github.com/repos/${username}/${repoName}/readme`,
-            { headers: { Accept: "application/vnd.github.v3+json" } }
+            {
+              headers: {
+                Accept: "application/vnd.github.v3+json",
+                ...githubHeaders,
+              },
+            }
           );
           const base64 = readmeRes.data.content.replace(/\n/g, "");
           const bytes = Uint8Array.from(atob(base64), function (c) {
@@ -78,7 +88,10 @@ function RepoDetail() {
         try {
           const commitsRes = await axios.get(
             `https://api.github.com/repos/${username}/${repoName}/commits`,
-            { params: { per_page: 100 } }
+            {
+              params: { per_page: 100 },
+              headers: githubHeaders,
+            }
           );
           const allCommits = commitsRes.data;
           setCommits(allCommits.slice(0, 10));
@@ -91,18 +104,27 @@ function RepoDetail() {
           const commitCounts = {};
           allCommits.forEach(function (c) {
             if (c.commit?.author?.date) {
-              const month = new Date(c.commit.author.date).toLocaleString(
-                "default", { month: "short" }
-              );
-              commitCounts[month] = (commitCounts[month] || 0) + 1;
+              const date = new Date(c.commit.author.date);
+              const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+              commitCounts[key] = (commitCounts[key] || 0) + 1;
             }
           });
+
+          const sortedKeys = Object.keys(commitCounts).sort();
+          const sortedLabels = sortedKeys.map(function (key) {
+            const [year, month] = key.split("-");
+            return new Date(year, month - 1).toLocaleString("default", { month: "short" });
+          });
+          const sortedData = sortedKeys.map(function (key) {
+            return commitCounts[key];
+          });
+
           setCommitChartData({
-            labels: Object.keys(commitCounts),
+            labels: sortedLabels,
             datasets: [
               {
                 label: "Commits",
-                data: Object.values(commitCounts),
+                data: sortedData,
                 backgroundColor: "rgba(48, 43, 99, 0.7)",
                 borderRadius: 6,
                 barThickness: 40,
@@ -118,7 +140,10 @@ function RepoDetail() {
         try {
           const issuesRes = await axios.get(
             `https://api.github.com/repos/${username}/${repoName}/issues`,
-            { params: { per_page: 5 } }
+            {
+              params: { per_page: 5 },
+              headers: githubHeaders,
+            }
           );
           setIssues(issuesRes.data);
         } catch {
@@ -128,7 +153,8 @@ function RepoDetail() {
         // Contributors
         try {
           const contribRes = await axios.get(
-            `https://api.github.com/repos/${username}/${repoName}/contributors`
+            `https://api.github.com/repos/${username}/${repoName}/contributors`,
+            { headers: githubHeaders }
           );
           setContributors(contribRes.data);
         } catch {
@@ -230,10 +256,10 @@ function RepoDetail() {
       {aiAvailable && (
         <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
           <div
-            className="card-header fw-bold text-center text-white d-flex justify-content-between align-items-center"
+            className="card-header fw-bold text-white d-flex justify-content-between align-items-center"
             style={{ background: "linear-gradient(135deg, #0f0c29, #302b63)", borderRadius: "12px 12px 0 0" }}
           >
-            <span>✨ AI Repository Summary</span>
+            <span>AI Repository Summary</span>
             <span style={{ fontSize: "11px", fontWeight: "400", opacity: 0.7 }}>Powered by Llama 3.3</span>
           </div>
           <div className="card-body">
@@ -266,7 +292,7 @@ function RepoDetail() {
                       Generating Summary...
                     </>
                   ) : (
-                    "✨ Generate AI Summary"
+                    "Generate AI Summary"
                   )}
                 </button>
               </div>
