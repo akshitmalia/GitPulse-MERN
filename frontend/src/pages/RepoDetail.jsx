@@ -13,6 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import axios from "axios";
+import axiosInstance from "../api/axios.js";
 import { marked } from "marked";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -38,6 +39,9 @@ function RepoDetail() {
   const [commitChartData, setCommitChartData] = useState(null);
   const [repoData, setRepoData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aiSummary, setAiSummary] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(true);
 
   const isFavourited = favourites.some(function (f) {
     return f.repoName === repoName && f.ownerLogin === username;
@@ -65,8 +69,7 @@ function RepoDetail() {
             return c.charCodeAt(0);
           });
           const content = new TextDecoder("utf-8").decode(bytes);
-          const htmlContent = marked(content);
-          setReadme(htmlContent);
+          setReadme(marked(content));
         } catch {
           setReadme("");
         }
@@ -89,8 +92,7 @@ function RepoDetail() {
           allCommits.forEach(function (c) {
             if (c.commit?.author?.date) {
               const month = new Date(c.commit.author.date).toLocaleString(
-                "default",
-                { month: "short" }
+                "default", { month: "short" }
               );
               commitCounts[month] = (commitCounts[month] || 0) + 1;
             }
@@ -101,7 +103,8 @@ function RepoDetail() {
               {
                 label: "Commits",
                 data: Object.values(commitCounts),
-                backgroundColor: "rgba(54, 162, 235, 0.6)",
+                backgroundColor: "rgba(48, 43, 99, 0.7)",
+                borderRadius: 6,
                 barThickness: 40,
                 maxBarThickness: 50,
               },
@@ -161,32 +164,128 @@ function RepoDetail() {
     }
   }
 
-  if (loading) return <p className="text-center mt-5"><i>Loading...</i></p>;
+  async function handleAiSummary() {
+    if (!repoData) return;
+    setAiLoading(true);
+    setAiSummary("");
+    try {
+      const res = await axiosInstance.post("/gitpulse/ai/summarize", {
+        repoName: repoData.name,
+        ownerLogin: repoData.owner.login,
+        description: repoData.description || "",
+        stars: repoData.stargazers_count,
+        forks: repoData.forks_count,
+        language: repoData.language || "",
+      });
+      setAiSummary(res.data.summary);
+    } catch (err) {
+      console.error("AI summary error:", err);
+      setAiAvailable(false);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  if (loading) return (
+    <div className="text-center mt-5">
+      <div className="spinner-border text-primary" role="status"></div>
+      <p className="mt-2 text-muted">Loading repository...</p>
+    </div>
+  );
 
   return (
     <div className="container my-4">
-      <div className="border border-dark p-3 rounded-3 bg-dark d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <h2 className="text-light fw-bold mb-0" style={{ wordBreak: "break-word" }}>
+
+      {/* Header */}
+      <div
+        className="p-4 rounded-3 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2"
+        style={{ background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)" }}
+      >
+        <h2
+          className="fw-bold mb-0"
+          style={{ wordBreak: "break-word", color: "#f6c90e" }}
+        >
           {username}/{repoName}
         </h2>
         {user && (
           <button
             onClick={handleFavourite}
-            className={`btn btn-sm ${isFavourited ? "btn-warning" : "btn-outline-warning"}`}
+            className="btn btn-sm"
+            style={{
+              backgroundColor: isFavourited ? "#f6c90e" : "transparent",
+              color: isFavourited ? "#1a1a1a" : "#f6c90e",
+              border: "1.5px solid #f6c90e",
+              borderRadius: "20px",
+              padding: "6px 16px",
+              fontWeight: "600",
+              fontSize: "13px",
+            }}
           >
             {isFavourited ? "⭐ Added to Favourites" : "☆ Add to Favourites"}
           </button>
         )}
       </div>
 
+      {/* AI Summary */}
+      {aiAvailable && (
+        <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+          <div
+            className="card-header fw-bold text-center text-white d-flex justify-content-between align-items-center"
+            style={{ background: "linear-gradient(135deg, #0f0c29, #302b63)", borderRadius: "12px 12px 0 0" }}
+          >
+            <span>✨ AI Repository Summary</span>
+            <span style={{ fontSize: "11px", fontWeight: "400", opacity: 0.7 }}>Powered by Llama 3.3</span>
+          </div>
+          <div className="card-body">
+            {aiSummary ? (
+              <p style={{ fontSize: "15px", lineHeight: "1.7", color: "#333", margin: 0 }}>
+                {aiSummary}
+              </p>
+            ) : (
+              <div className="text-center py-2">
+                <p className="text-muted small mb-3">
+                  Get an AI-powered insight about this repository — what it does, who it is for and why it matters.
+                </p>
+                <button
+                  onClick={handleAiSummary}
+                  disabled={aiLoading}
+                  className="btn btn-sm"
+                  style={{
+                    background: "linear-gradient(135deg, #0f0c29, #302b63)",
+                    color: "#f6c90e",
+                    border: "none",
+                    borderRadius: "20px",
+                    padding: "8px 24px",
+                    fontWeight: "600",
+                    fontSize: "13px",
+                  }}
+                >
+                  {aiLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Generating Summary...
+                    </>
+                  ) : (
+                    "✨ Generate AI Summary"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* README */}
-      <div className="card mb-4 mt-4">
-        <div className="card-header bg-info text-white fw-bold text-center">
+      <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+        <div
+          className="card-header fw-bold text-center text-white"
+          style={{ background: "#0dcaf0", borderRadius: "12px 12px 0 0" }}
+        >
           README
         </div>
         <div
-          className="card-body"
-          style={{ overflowX: "auto" }}
+          className="card-body readme-body"
+          style={{ overflowX: "auto", padding: "1.5rem" }}
           dangerouslySetInnerHTML={{
             __html: readme || "<p class='text-danger'>No README found</p>",
           }}
@@ -194,15 +293,26 @@ function RepoDetail() {
       </div>
 
       {/* Recent Commits */}
-      <div className="card mb-4">
-        <div className="card-header bg-success text-white fw-bold text-center">
+      <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+        <div
+          className="card-header fw-bold text-center text-white"
+          style={{ background: "#198754", borderRadius: "12px 12px 0 0" }}
+        >
           Recent Commits
         </div>
         <div className="card-body">
-          <ul className="list-unstyled">
+          <ul className="list-unstyled mb-0">
             {commits.length > 0 ? (
               commits.map(function (c, i) {
-                return <li key={i} className="mb-1">{c.commit.message}</li>;
+                return (
+                  <li
+                    key={i}
+                    className="mb-2 pb-2"
+                    style={{ borderBottom: i < commits.length - 1 ? "1px solid #f1f1f1" : "none", fontSize: "13px" }}
+                  >
+                    {c.commit.message}
+                  </li>
+                );
               })
             ) : (
               <li className="text-danger">No commits found</li>
@@ -212,20 +322,26 @@ function RepoDetail() {
       </div>
 
       {/* Personal Commits */}
-      <div className="card mb-4">
-        <div className="card-header bg-secondary text-white fw-bold text-center">
+      <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+        <div
+          className="card-header fw-bold text-center text-white"
+          style={{ background: "#6c757d", borderRadius: "12px 12px 0 0" }}
+        >
           Your Commits
         </div>
         <div className="card-body">
-          <ul className="list-unstyled">
+          <ul className="list-unstyled mb-0">
             {personalCommits.length > 0 ? (
               personalCommits.map(function (c, i) {
                 return (
-                  <li key={i} className="mb-1">
-                    {c.commit.message}
-                    <small className="text-muted">
-                      {" "}({c.commit.author.name} on{" "}
-                      {new Date(c.commit.author.date).toLocaleDateString()})
+                  <li
+                    key={i}
+                    className="mb-2 pb-2"
+                    style={{ borderBottom: i < personalCommits.length - 1 ? "1px solid #f1f1f1" : "none" }}
+                  >
+                    <span style={{ fontSize: "13px" }}>{c.commit.message}</span>
+                    <small className="text-muted d-block">
+                      {c.commit.author.name} · {new Date(c.commit.author.date).toLocaleDateString()}
                     </small>
                   </li>
                 );
@@ -238,15 +354,26 @@ function RepoDetail() {
       </div>
 
       {/* Issues */}
-      <div className="card mb-4">
-        <div className="card-header bg-danger text-white fw-bold text-center">
+      <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+        <div
+          className="card-header fw-bold text-center text-white"
+          style={{ background: "#dc3545", borderRadius: "12px 12px 0 0" }}
+        >
           Open Issues
         </div>
         <div className="card-body">
-          <ul className="list-unstyled">
+          <ul className="list-unstyled mb-0">
             {issues.length > 0 ? (
               issues.map(function (issue) {
-                return <li key={issue.id} className="mb-1">{issue.title}</li>;
+                return (
+                  <li
+                    key={issue.id}
+                    className="mb-2 pb-2"
+                    style={{ fontSize: "13px", borderBottom: "1px solid #f1f1f1" }}
+                  >
+                    {issue.title}
+                  </li>
+                );
               })
             ) : (
               <li className="text-muted">No open issues</li>
@@ -256,21 +383,37 @@ function RepoDetail() {
       </div>
 
       {/* Contributors */}
-      <div className="card mb-4">
-        <div className="card-header bg-warning text-dark fw-bold text-center">
+      <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+        <div
+          className="card-header fw-bold text-center"
+          style={{ background: "#ffc107", borderRadius: "12px 12px 0 0", color: "#1a1a1a" }}
+        >
           Contributors
         </div>
         <div className="card-body">
-          <ul className="list-unstyled">
+          <ul className="list-unstyled mb-0">
             {contributors.length > 0 ? (
               contributors.map(function (c) {
                 return (
                   <li
                     key={c.id}
-                    className="d-flex justify-content-between align-items-center mb-1"
+                    className="d-flex justify-content-between align-items-center mb-2 pb-2"
+                    style={{ borderBottom: "1px solid #f1f1f1", fontSize: "13px" }}
                   >
-                    {c.login}
-                    <span className="badge bg-primary rounded-pill">
+                    <div className="d-flex align-items-center gap-2">
+                      <img
+                        src={c.avatar_url}
+                        alt={c.login}
+                        width={28}
+                        height={28}
+                        className="rounded-circle"
+                      />
+                      {c.login}
+                    </div>
+                    <span
+                      className="badge rounded-pill"
+                      style={{ background: "#302b63", color: "#fff" }}
+                    >
                       {c.contributions}
                     </span>
                   </li>
@@ -285,32 +428,46 @@ function RepoDetail() {
 
       {/* Commit Chart */}
       {commitChartData && (
-        <div className="card mb-4">
-          <div className="card-header bg-primary text-white fw-bold text-center">
+        <div className="card mb-4" style={{ borderRadius: "12px", border: "1px solid #e9ecef" }}>
+          <div
+            className="card-header fw-bold text-center text-white"
+            style={{ background: "#302b63", borderRadius: "12px 12px 0 0" }}
+          >
             Commit History (Last Year)
           </div>
           <div className="card-body">
             <Bar
-  key={JSON.stringify(commitChartData.labels)}
-  data={commitChartData}
-  options={{
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { categoryPercentage: 0.6, barPercentage: 0.6 },
-      y: { beginAtZero: true },
-    },
-  }}
-/>
+              key={JSON.stringify(commitChartData.labels)}
+              data={commitChartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { categoryPercentage: 0.6, barPercentage: 0.6 },
+                  y: { beginAtZero: true },
+                },
+              }}
+            />
           </div>
         </div>
       )}
 
       <div className="text-center mt-3">
-        <a href="/" className="btn btn-dark w-100">
-          Back to Search
-        </a>
+        <button
+          onClick={function () { window.history.back(); }}
+          className="btn w-100"
+          style={{
+            background: "linear-gradient(135deg, #0f0c29, #302b63)",
+            color: "#fff",
+            borderRadius: "8px",
+            border: "none",
+            padding: "10px",
+            fontWeight: "600",
+          }}
+        >
+          Back
+        </button>
       </div>
     </div>
   );
