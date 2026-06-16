@@ -190,27 +190,40 @@ function RepoDetail() {
     }
   }
 
-  async function handleAiSummary() {
-    if (!repoData) return;
-    setAiLoading(true);
-    setAiSummary("");
+async function handleAiSummary() {
+  if (!repoData) return;
+  setAiLoading(true);
+  setAiSummary("");
+  try {
+    let topics = [];
     try {
-      const res = await axiosInstance.post("/gitpulse/ai/summarize", {
-        repoName: repoData.name,
-        ownerLogin: repoData.owner.login,
-        description: repoData.description || "",
-        stars: repoData.stargazers_count,
-        forks: repoData.forks_count,
-        language: repoData.language || "",
-      });
-      setAiSummary(res.data.summary);
-    } catch (err) {
-      console.error("AI summary error:", err);
-      setAiAvailable(false);
-    } finally {
-      setAiLoading(false);
+      const topicsRes = await axios.get(
+        `https://api.github.com/repos/${username}/${repoName}/topics`,
+        { headers: { Accept: "application/vnd.github.mercy-preview+json", ...githubHeaders } }
+      );
+      topics = topicsRes.data.names || [];
+    } catch {
+      topics = [];
     }
+
+    const res = await axiosInstance.post("/gitpulse/ai/summarize", {
+      repoName: repoData.name,
+      ownerLogin: repoData.owner.login,
+      description: repoData.description || "",
+      stars: repoData.stargazers_count,
+      forks: repoData.forks_count,
+      language: repoData.language || "",
+      readmeText: readme ? readme.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 3000) : "",
+      topics: topics,
+    });
+    setAiSummary(res.data.summary);
+  } catch (err) {
+    console.error("AI summary error:", err);
+    setAiAvailable(false);
+  } finally {
+    setAiLoading(false);
   }
+}
 
   if (loading) return (
     <div className="text-center mt-5">
