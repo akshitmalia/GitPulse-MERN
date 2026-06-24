@@ -1,53 +1,53 @@
 # GitPulse — MERN Stack GitHub Analytics Dashboard
 
-A full-stack MERN application that lets you search any GitHub username and explore their repositories, commits, contributors, and activity graphs — all in one place. Includes Google and GitHub OAuth authentication with a personalized favourites system.
+A full-stack MERN application that lets you search any GitHub username and explore their repositories, commits, contributors, and activity graphs in one place. Includes GitHub and Google OAuth authentication, a personalized favourites system with full CRUD operations, and AI-generated repository summaries powered by Groq's Llama 3.3 model.
 
-## 🔗 Links
+## Live Links
 
-- **Live Demo:** https://gitpulse-github-analytics-dashboard.vercel.app
-- **Backend API:** https://gitpulse-mern.onrender.com
-- **GitHub Repo:** https://github.com/akshitmalia/GitPulse-MERN
+- Live Demo: https://gitpulse-github-analytics-dashboard.vercel.app
+- Backend API: https://gitpulse-mern.onrender.com
+- Repository: https://github.com/akshitmalia/GitPulse-MERN
 
----
+## Overview
 
-## ✨ Features
+GitPulse allows a user to search for any GitHub profile and inspect their public repositories in detail, including commit history, contributors, open issues, and a chronological commit activity chart. Authenticated users can save repositories to a personal favourites list, persisted in MongoDB, with full create, read, update, and delete functionality. Each repository page also offers an AI-generated summary that explains what the project does, grounded in its actual README content and GitHub topics rather than assumptions based on the repository name alone.
 
-- 🔍 Search GitHub users with debounced input
-- 📁 View all repositories with filter and sort (name, stars, forks, issues)
-- 📖 Render repository README as formatted markdown
-- 📝 View recent commits and personal commits
-- 👥 View contributors with contribution count
-- 📊 Commit activity bar graph using Chart.js
-- ⭐ Save repositories to favourites (CRUD)
-- ✏️ Edit favourite description
-- 🔐 GitHub and Google OAuth login via Passport.js
-- 🍪 JWT authentication with httpOnly cookies
-- 📱 Fully responsive with Bootstrap
+## Core Features
 
----
+- GitHub user search with debounced input to minimize redundant API calls
+- Repository listing with client-side filtering and sorting by name, stars, forks, and open issues
+- Repository README rendered as formatted HTML using Markdown parsing
+- Recent commit history and commits attributed to the repository owner
+- Contributor list with individual contribution counts
+- Commit activity visualized as a chronological bar chart using Chart.js
+- AI-generated repository summaries using Groq's Llama 3.3 model, built with prompt engineering that prioritizes README content and repository topics over the repository name to avoid inaccurate inferences
+- Personalized favourites system with full CRUD operations, backed by MongoDB
+- GitHub and Google OAuth 2.0 authentication via Passport.js
+- JWT-based session management using httpOnly cookies
+- Authenticated GitHub API requests to raise the rate limit from 60 to 5,000 requests per hour
+- Fully responsive interface built with Bootstrap
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-### Frontend
-- React + Vite
+**Frontend**
+- React (Vite)
 - Redux Toolkit
 - React Router DOM
 - Axios
 - Bootstrap
-- Chart.js + react-chartjs-2
-- Marked.js
+- Chart.js with react-chartjs-2
+- Marked.js for Markdown rendering
 
-### Backend
-- Node.js + Express
-- MongoDB + Mongoose
-- Passport.js (GitHub OAuth + Google OAuth)
+**Backend**
+- Node.js with Express
+- MongoDB with Mongoose
+- Passport.js (GitHub OAuth and Google OAuth strategies)
 - JSON Web Tokens (JWT)
 - Cookie Parser
 - CORS
+- Groq SDK for LLM-based repository summarization
 
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 GitPulse-MERN/
@@ -61,7 +61,8 @@ GitPulse-MERN/
 │   │   └── user.js
 │   ├── routes/
 │   │   ├── authRoutes.js
-│   │   └── favouritesRoutes.js
+│   │   ├── favouritesRoutes.js
+│   │   └── aiRoutes.js
 │   ├── server.js
 │   ├── .env.example
 │   └── package.json
@@ -91,23 +92,24 @@ GitPulse-MERN/
     └── package.json
 ```
 
----
-
-## ⚙️ Local Setup
+## Local Setup
 
 ### 1. Clone the repository
+
 ```bash
 git clone https://github.com/akshitmalia/GitPulse-MERN.git
 cd GitPulse-MERN
 ```
 
 ### 2. Backend setup
+
 ```bash
 cd backend
 npm install
 ```
 
-Create `.env` file in backend folder:
+Create a `.env` file inside the `backend` folder:
+
 ```env
 PORT=5000
 NODE_ENV=development
@@ -120,58 +122,72 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALLBACK_URL=http://localhost:5000/gitpulse/auth/google/callback
 CLIENT_URL=http://localhost:5173
+GROQ_API_KEY=your_groq_api_key
 ```
+
+Start the backend:
 
 ```bash
 npm run dev
 ```
 
 ### 3. Frontend setup
+
 ```bash
 cd frontend
 npm install
 ```
 
-Create `.env` file in frontend folder:
+Create a `.env` file inside the `frontend` folder:
+
 ```env
 VITE_API_URL=http://localhost:5000
+VITE_GITHUB_TOKEN=your_github_personal_access_token
 ```
+
+Start the frontend:
 
 ```bash
 npm run dev
 ```
 
-### 4. Open in browser
+### 4. Open the application
+
 ```
 http://localhost:5173
 ```
 
----
-
-## 🔐 OAuth Setup
+## OAuth Configuration
 
 ### GitHub OAuth
-1. Go to GitHub → Settings → Developer Settings → OAuth Apps → New OAuth App
-2. Homepage URL: `http://localhost:5173`
-3. Callback URL: `http://localhost:5000/gitpulse/auth/github/callback`
-4. Copy Client ID and Client Secret to `.env`
+
+1. Go to GitHub Settings, Developer Settings, OAuth Apps, and create a new OAuth App
+2. Set Homepage URL to `http://localhost:5173`
+3. Set Authorization callback URL to `http://localhost:5000/gitpulse/auth/github/callback`
+4. Copy the generated Client ID and Client Secret into the backend `.env` file
 
 ### Google OAuth
-1. Go to Google Cloud Console → APIs & Services → Credentials → Create OAuth Client ID
-2. Authorized origins: `http://localhost:5173`
-3. Authorized redirect URIs: `http://localhost:5000/gitpulse/auth/google/callback`
-4. Copy Client ID and Client Secret to `.env`
 
----
+1. Go to Google Cloud Console, APIs and Services, Credentials, and create a new OAuth Client ID
+2. Add `http://localhost:5173` as an authorized JavaScript origin
+3. Add `http://localhost:5000/gitpulse/auth/google/callback` as an authorized redirect URI
+4. Copy the generated Client ID and Client Secret into the backend `.env` file
 
-## 🚀 Deployment
+### Groq API
 
-- **Frontend** → Vercel (root directory: `frontend`)
-- **Backend** → Render (root directory: `backend`, start command: `node server.js`)
+1. Create an account at console.groq.com
+2. Generate an API key
+3. Copy the key into the `GROQ_API_KEY` variable in the backend `.env` file
+
+## Deployment
+
+- Frontend is deployed on Vercel, with the root directory set to `frontend`
+- Backend is deployed on Render, with the root directory set to `backend` and the start command set to `node server.js`
 
 ### Production environment variables
 
-**Render (Backend):**
+**Render (Backend)**
+
 ```env
 NODE_ENV=production
 MONGO_URI=your_mongodb_atlas_uri
@@ -183,38 +199,45 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALLBACK_URL=https://your-render-url.onrender.com/gitpulse/auth/google/callback
 CLIENT_URL=https://your-vercel-url.vercel.app
+GROQ_API_KEY=your_groq_api_key
 ```
 
-**Vercel (Frontend):**
+**Vercel (Frontend)**
+
 ```env
 VITE_API_URL=https://your-render-url.onrender.com
+VITE_GITHUB_TOKEN=your_github_personal_access_token
 ```
 
----
+## API Reference
 
-## 📝 API Endpoints
+### Authentication routes — `/gitpulse/auth`
 
-### Auth Routes `/gitpulse/auth`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/github` | GitHub OAuth login |
-| GET | `/github/callback` | GitHub OAuth callback |
-| GET | `/google` | Google OAuth login |
-| GET | `/google/callback` | Google OAuth callback |
-| GET | `/me` | Get current user |
-| POST | `/logout` | Logout user |
+| GET | `/github` | Initiates GitHub OAuth login |
+| GET | `/github/callback` | GitHub OAuth callback handler |
+| GET | `/google` | Initiates Google OAuth login |
+| GET | `/google/callback` | Google OAuth callback handler |
+| GET | `/me` | Returns the currently authenticated user |
+| POST | `/logout` | Logs out the current user |
 
-### Favourites Routes `/gitpulse/favourites`
+### Favourites routes — `/gitpulse/favourites`
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Get all favourites |
-| POST | `/` | Add a favourite |
-| PUT | `/:repoId` | Update favourite description |
-| DELETE | `/:repoId` | Remove a favourite |
+| GET | `/` | Retrieves all favourites for the authenticated user |
+| POST | `/` | Adds a repository to favourites |
+| PUT | `/:repoId` | Updates the description of a favourite |
+| DELETE | `/:repoId` | Removes a repository from favourites |
 
----
+### AI routes — `/gitpulse/ai`
 
-## 🌐 Environment Variables — `.env.example`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/summarize` | Generates an AI summary of a repository using its README content, topics, and metadata |
+
+## Environment Variables Reference — `.env.example`
 
 ```env
 PORT=5000
@@ -228,12 +251,16 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_CALLBACK_URL=
 CLIENT_URL=
+GROQ_API_KEY=
 ```
 
----
-
-## 👨‍💻 Author
+## Author
 
 **Akshit Malia**
-- GitHub: [@akshitmalia](https://github.com/akshitmalia)
-- LinkedIn: [akshitmalia](https://linkedin.com/in/akshitmalia)
+
+- GitHub: https://github.com/akshitmalia
+- LinkedIn: https://linkedin.com/in/akshitmalia
+
+## License
+
+This project is open source and available under the MIT License.
