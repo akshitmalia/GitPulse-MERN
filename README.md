@@ -2,11 +2,18 @@
 
 A full-stack MERN application that lets you search any GitHub username and explore their repositories, commits, contributors, and activity graphs in one place. Includes GitHub and Google OAuth authentication, a personalized favourites system with full CRUD operations, and AI-generated repository summaries powered by Groq's Llama 3.3 model.
 
-## Live Links
+## Deployment and Repository Links
 
-- Live Demo: https://gitpulse-github-analytics-dashboard.vercel.app
-- Backend API: https://gitpulse-mern.onrender.com
-- Repository: https://github.com/akshitmalia/GitPulse-MERN
+* **Live Client Application:** [GitPulse Dashboard](https://gitpulse-github-analytics-dashboard.vercel.app)
+* **Backend API Endpoint:** [GitPulse Server API](https://gitpulse-mern.onrender.com)
+* **Source Code Repository:** [GitHub Repository](https://github.com/akshitmalia/GitPulse-MERN)
+
+## Video Demonstration
+
+A complete walk-through of the application features, user interface, and integration flow is available on Loom:
+
+[Watch the GitPulse Product Demonstration](https://www.loom.com/share/6db00dcdf53d451080389a3b84988267)
+
 
 ## Overview
 
