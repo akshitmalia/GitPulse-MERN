@@ -43,13 +43,13 @@ ${stars > 0 || forks > 0
 
 IMPORTANT: If the repository name suggests one meaning but the README/description clearly indicates something different, ALWAYS trust the README/description over the name. Never invent a purpose the content doesn't support. Write in a professional, friendly tone as a single clean paragraph with no bullet points or markdown formatting.`;
 
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.5,
-      max_tokens: 300,
-    });
-
+const response = await groq.chat.completions.create({
+  model: "openai/gpt-oss-120b",
+  messages: [{ role: "user", content: prompt }],
+  temperature: 0.5,
+  max_tokens: 300,
+});
+ 
     const summary = response.choices[0]?.message?.content;
 
     if (!summary) {

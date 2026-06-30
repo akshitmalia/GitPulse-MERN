@@ -190,40 +190,40 @@ function RepoDetail() {
     }
   }
 
-async function handleAiSummary() {
-  if (!repoData) return;
-  setAiLoading(true);
-  setAiSummary("");
-  try {
-    let topics = [];
+  async function handleAiSummary() {
+    if (!repoData) return;
+    setAiLoading(true);
+    setAiSummary("");
     try {
-      const topicsRes = await axios.get(
-        `https://api.github.com/repos/${username}/${repoName}/topics`,
-        { headers: { Accept: "application/vnd.github.mercy-preview+json", ...githubHeaders } }
-      );
-      topics = topicsRes.data.names || [];
-    } catch {
-      topics = [];
-    }
+      let topics = [];
+      try {
+        const topicsRes = await axios.get(
+          `https://api.github.com/repos/${username}/${repoName}/topics`,
+          { headers: { Accept: "application/vnd.github.mercy-preview+json", ...githubHeaders } }
+        );
+        topics = topicsRes.data.names || [];
+      } catch {
+        topics = [];
+      }
 
-    const res = await axiosInstance.post("/gitpulse/ai/summarize", {
-      repoName: repoData.name,
-      ownerLogin: repoData.owner.login,
-      description: repoData.description || "",
-      stars: repoData.stargazers_count,
-      forks: repoData.forks_count,
-      language: repoData.language || "",
-      readmeText: readme ? readme.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 3000) : "",
-      topics: topics,
-    });
-    setAiSummary(res.data.summary);
-  } catch (err) {
-    console.error("AI summary error:", err);
-    setAiAvailable(false);
-  } finally {
-    setAiLoading(false);
+      const res = await axiosInstance.post("/gitpulse/ai/summarize", {
+        repoName: repoData.name,
+        ownerLogin: repoData.owner.login,
+        description: repoData.description || "",
+        stars: repoData.stargazers_count,
+        forks: repoData.forks_count,
+        language: repoData.language || "",
+        readmeText: readme ? readme.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 3000) : "",
+        topics: topics,
+      });
+      setAiSummary(res.data.summary);
+    } catch (err) {
+      console.error("AI summary error:", err);
+      setAiAvailable(false);
+    } finally {
+      setAiLoading(false);
+    }
   }
-}
 
   if (loading) return (
     <div className="text-center mt-5">
@@ -260,7 +260,7 @@ async function handleAiSummary() {
               fontSize: "13px",
             }}
           >
-            {isFavourited ? "⭐ Added to Favourites" : "☆ Add to Favourites"}
+            {isFavourited ? "Added to Favourites" : "Add to Favourites"}
           </button>
         )}
       </div>
@@ -273,7 +273,7 @@ async function handleAiSummary() {
             style={{ background: "linear-gradient(135deg, #0f0c29, #302b63)", borderRadius: "12px 12px 0 0" }}
           >
             <span>AI Repository Summary</span>
-            <span style={{ fontSize: "11px", fontWeight: "400", opacity: 0.7 }}>Powered by Llama 3.3</span>
+            <span style={{ fontSize: "11px", fontWeight: "400", opacity: 0.7 }}>Powered by GPT-OSS 120B</span>
           </div>
           <div className="card-body">
             {aiSummary ? (
