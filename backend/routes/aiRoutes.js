@@ -33,7 +33,7 @@ ${readmeText}
 """`
   : "No README content is available. Base your summary on the description, topics and language only. Do not guess the project's domain purely from the repository name if it could be misleading (e.g. a name like 'cantilever' or 'phoenix' may just be a project codename, not its actual technical domain)."}
 
-Write a concise 4-5 sentence paragraph covering:
+Write a concise paragraph covering:
 - What this project actually does, based strictly on the README/description/topics above
 - The technology stack and what it suggests about the project
 - Who would benefit from using or learning from this project
@@ -41,15 +41,19 @@ ${stars > 0 || forks > 0
   ? `- Mention that this repository has ${stars} stars and ${forks} forks, indicating ${stars > 100 ? "strong community interest and adoption" : stars > 10 ? "growing interest from developers" : "it is an emerging project gaining attention"}`
   : "- Mention that this appears to be a personal or early stage project, showing initiative and hands-on learning"}
 
-IMPORTANT: If the repository name suggests one meaning but the README/description clearly indicates something different, ALWAYS trust the README/description over the name. Never invent a purpose the content doesn't support. Write in a professional, friendly tone as a single clean paragraph with no bullet points or markdown formatting.`;
+IMPORTANT: If the repository name suggests one meaning but the README/description clearly indicates something different, ALWAYS trust the README/description over the name. Never invent a purpose the content doesn't support.
 
-const response = await groq.chat.completions.create({
-  model: "openai/gpt-oss-120b",
-  messages: [{ role: "user", content: prompt }],
-  temperature: 0.5,
-  max_tokens: 300,
-});
- 
+LENGTH REQUIREMENT: Write exactly 4 to 5 complete sentences, no more than 120 words total. This is a hard limit — do not exceed it. Every sentence must be fully finished; never leave a sentence incomplete or cut off. If you are running close to the word limit, wrap up your current sentence and stop rather than starting a new one.
+
+Write in a professional, friendly tone as a single clean paragraph with no bullet points or markdown formatting.`;
+
+    const response = await groq.chat.completions.create({
+      model: "openai/gpt-oss-120b",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+      max_tokens: 600,
+    });
+
     const summary = response.choices[0]?.message?.content;
 
     if (!summary) {
