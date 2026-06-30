@@ -47,12 +47,15 @@ LENGTH REQUIREMENT: Write exactly 4 to 5 complete sentences, no more than 120 wo
 
 Write in a professional, friendly tone as a single clean paragraph with no bullet points or markdown formatting.`;
 
-    const response = await groq.chat.completions.create({
-      model: "openai/gpt-oss-120b",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.5,
-      max_tokens: 600,
-    });
+const response = await groq.chat.completions.create({
+  model: "openai/gpt-oss-20b",
+  messages: [{ role: "user", content: prompt }],
+  temperature: 0.5,
+  max_tokens: 700,
+  reasoning_effort: "low",
+});
+
+console.log("Full Groq response:", JSON.stringify(response, null, 2));
 
     const summary = response.choices[0]?.message?.content;
 
